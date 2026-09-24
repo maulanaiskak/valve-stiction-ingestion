@@ -1,8 +1,8 @@
 FROM golang:1.25 AS build
 WORKDIR /app
-COPY ingestion/go.mod ingestion/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
-COPY ingestion/ .
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /ingestion .
 
 FROM gcr.io/distroless/static-debian12
