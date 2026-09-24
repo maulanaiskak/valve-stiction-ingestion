@@ -5,7 +5,20 @@ MQTT ingestion service for the valve stiction fault-detection pipeline. Subscrib
 Two modes, same windowing logic, swapped via `PUBLISH_MODE`:
 
 - `grpc` (default) — calls the detection service directly and persists the response itself.
-- `kafka` — publishes each window to Redpanda/Kafka instead (partitioned by `sensor_id`), for horizontal scaling across multiple detection-service replicas. Persistence in this mode happens on the detection side (`kafka_worker.py`), not here.
+- `kafka` — publishes each window to Redpanda/Kafka instead (partitioned by `sensor_id`), for horizontal scaling across multiple detection-service replicas. Persistence in this mode happens on the detection side (`delivery/kafka/worker.py` in valve-stiction-detection), not here.
+
+## Architecture
+
+Layered: `domain` (plain types, no I/O) → `usecase` (windowing logic, transport-agnostic) → `repository` (TimescaleDB persistence) → `delivery` (transport adapters). `main.go` is just wiring.
+
+```
+domain/sample.go              Sample, WindowMessage, DetectionResult -- plain data
+usecase/ingestor.go            Ingestor -- sliding-window buffering, transport-agnostic
+repository/detection_result.go TimescaleDB writes (gRPC adapter only)
+delivery/mqtt/subscriber.go    inbound: MQTT subscribe -> domain.Sample
+delivery/grpc/publisher.go     outbound: gRPC call to detection service + persist (V1)
+delivery/kafka/publisher.go    outbound: publish to Redpanda/Kafka (V2)
+```
 
 ## Run
 
@@ -26,4 +39,4 @@ DETECTION_SERVICE_ADDR=localhost:50051 DATABASE_URL=postgresql://postgres:postgr
 
 ## Files worth knowing about
 
-`proto/detection.proto`, `db/init.sql` — copies of the shared gRPC contract and TimescaleDB schema. This service and [valve-stiction-detection](https://github.com/maulanaiskak/valve-stiction-detection) each keep their own copy (no shared/orchestrator repo) — if you change one, change the other. `detectionpb/` is the generated Go client stub from `proto/detection.proto`.
+`proto/detection.proto`, `db/init.sql` — copies of the shared gRPC contract and TimescaleDB schema. This service and [valve-stiction-detection](https://github.com/maulanaiskak/valve-stiction-detection) each keep their own copy (no shared/orchestrator repo) — if you change one, change the other. `delivery/grpc/detectionpb/` is the generated Go client stub from `proto/detection.proto`.

@@ -1,4 +1,4 @@
-module valve-stiction-pipeline/ingestion
+module github.com/maulanaiskak/valve-stiction-ingestion
 
 go 1.25.5
 

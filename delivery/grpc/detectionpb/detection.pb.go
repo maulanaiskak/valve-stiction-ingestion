@@ -191,7 +191,7 @@ const file_detection_proto_rawDesc = "" +
 	"\brf_label\x18\x05 \x01(\tR\arfLabel\x12%\n" +
 	"\x0erf_probability\x18\x06 \x01(\x01R\rrfProbability2P\n" +
 	"\tDetection\x12C\n" +
-	"\fDetectWindow\x12\x18.detection.WindowRequest\x1a\x19.detection.WindowResponseB/Z-valve-stiction-pipeline/ingestion/detectionpbb\x06proto3"
+	"\fDetectWindow\x12\x18.detection.WindowRequest\x1a\x19.detection.WindowResponseBLZJgithub.com/maulanaiskak/valve-stiction-ingestion/delivery/grpc/detectionpbb\x06proto3"
 
 var (
 	file_detection_proto_rawDescOnce sync.Once

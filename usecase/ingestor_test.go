@@ -1,13 +1,15 @@
-package main
+package usecase
 
 import (
 	"sync"
 	"testing"
+
+	"github.com/maulanaiskak/valve-stiction-ingestion/domain"
 )
 
 // recordedWindow is what fakePublisher captures per Publish call --
-// mirrors windowPublisher.Publish's arguments so tests don't need to care
-// whether the real implementation is grpcPublisher or kafkaPublisher.
+// mirrors WindowPublisher.Publish's arguments so tests don't need to care
+// whether the real implementation is the gRPC or Kafka delivery adapter.
 type recordedWindow struct {
 	sensorID    string
 	pv, op      []float64
@@ -36,9 +38,9 @@ func (f *fakePublisher) received() []recordedWindow {
 	return out
 }
 
-func feedSamples(in *ingestor, sensorID string, n int, startTS int64) {
+func feedSamples(in *Ingestor, sensorID string, n int, startTS int64) {
 	for i := 0; i < n; i++ {
-		in.handleSample(Sample{
+		in.HandleSample(domain.Sample{
 			SensorID: sensorID,
 			PV:       float64(i),
 			OP:       float64(i) * 2,
@@ -53,7 +55,7 @@ func TestNonOverlappingWindows_DefaultStride(t *testing.T) {
 	defer func() { WindowStride = origStride }()
 
 	publisher := &fakePublisher{}
-	in := newIngestor(publisher)
+	in := NewIngestor(publisher)
 
 	feedSamples(in, "valve-1", 250, 1000)
 
@@ -82,7 +84,7 @@ func TestSlidingWindows_SmallerStride(t *testing.T) {
 	defer func() { WindowStride = origStride }()
 
 	publisher := &fakePublisher{}
-	in := newIngestor(publisher)
+	in := NewIngestor(publisher)
 
 	feedSamples(in, "valve-1", 150, 1000)
 
@@ -110,7 +112,7 @@ func TestSensorsAreBufferedIndependently(t *testing.T) {
 	defer func() { WindowStride = origStride }()
 
 	publisher := &fakePublisher{}
-	in := newIngestor(publisher)
+	in := NewIngestor(publisher)
 
 	feedSamples(in, "valve-1", 100, 1000)
 	feedSamples(in, "valve-2", 50, 2000) // not enough for a window yet
